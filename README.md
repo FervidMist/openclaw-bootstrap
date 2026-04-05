@@ -82,6 +82,8 @@ powershell -ExecutionPolicy Bypass -File .\build\build-windows.ps1 -Mode slim
 ```
 
 > 当前 Windows 构建脚本会自动识别 `openclaw/` 或 `openclaw-portable/openclaw/` 作为源码目录；若已预取 `tools/environment-assets/windows/playwright-browsers/`，`fat` 包会直接复用本地浏览器缓存。
+>
+> 若要评估 Chromium-only 发行物，可先执行 `tools/environment-assets/windows/prefetch-playwright-browsers.ps1 -BrowserSet chromium -OutputDir playwright-browsers-chromium`，再用 `build/build-windows.ps1 -PlaywrightBrowsersPath .\tools\environment-assets\windows\playwright-browsers-chromium` 构建对比包，而不覆盖默认全量缓存。
 
 ### macOS 版
 

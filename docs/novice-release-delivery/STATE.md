@@ -2,41 +2,73 @@
 
 ## Latest Update
 
+- 2026-04-05: `prefetch-playwright-browsers.ps1` now supports `-OutputDir`, stages browser downloads into a temporary directory, and only replaces the target cache directory after a successful prefetch.
+- 2026-04-05: `prefetch-playwright-browsers.ps1` now resolves the exact Playwright version from the real OpenClaw `package.json` and installs a matching temporary CLI, so Chromium-only prefetch no longer needs a full OpenClaw dependency install when `node_modules/` is absent.
+- 2026-04-05: `build/build-windows.ps1` now supports `-PlaywrightBrowsersPath`, which allows side-by-side comparison between the default full browser cache and an isolated Chromium-only cache.
+- 2026-04-05: PowerShell parser checks passed for `build/build-windows.ps1` and `tools/environment-assets/windows/prefetch-playwright-browsers.ps1`.
+- 2026-04-05: A focused Chromium-only smoke reached the real browser download stage within the temporary CLI flow, but failed before emitting a final cache because Playwright CDN downloads hit repeated `ECONNRESET` and 30s timeout failures.
+- 2026-04-04: Re-checked `docs/novice-release-checklist.md`, `README.md`, `TRACKERS/TEST-MATRIX.md`, `ACCEPTANCE.md`, and `dist/openclaw-win-x64-fat/`; synced the status wording to the real progress.
 - 2026-03-28: `build/build-windows.ps1 -Mode fat` succeeded against auto-detected source `openclaw-portable/openclaw`.
 - 2026-03-28: Windows fat output was created at `dist/openclaw-win-x64-fat/` with bundled `node/`, `git/`, `openclaw/`, launcher `.bat` files, shared `data/`, `scripts/`, and cached Playwright browsers.
-- 2026-03-28: Builder source copy now excludes recursive `node_modules/` and `.git/`, which fixes the previous `Copy-Item` path-depth failure on the real OpenClaw tree.
-- 2026-03-28: `TEST-004` is treated as passed based on a real build smoke and dist artifact inspection.
-- 2026-03-28: `prefetch-playwright-browsers.ps1` now auto-detects `openclaw-portable/openclaw` and supports `-BrowserSet chromium`, but that narrow-path smoke still timed out locally and remains unverified.
-- 2026-04-04: Re-checked `docs/novice-release-checklist.md`, `README.md`, `TRACKERS/TEST-MATRIX.md`, `ACCEPTANCE.md`, and `dist/openclaw-win-x64-fat/`; synced the status wording to the real progress.
 
-- 当前阶段：`Checkpointed After Stable Commit`
+- 当前目标：`补齐 Windows fat 发版门槛，并把 Chromium-only 浏览器缓存评估路径收敛为可重复执行的工具链`
+- 建议主导 skill：`task-driven-dev-v2`
+- 当前阶段：`Blocked On External Validation Inputs`
 - 当前任务组：`2. Windows fat 正式包闭环` / `5. 验证与发版门槛`
 - 当前领域：`windows-portable`
+- 当前文档模式：`Standard`
 - 当前执行单元：
   - 类型：`slice`
-  - 编号：`SLICE-004`
+  - 编号：`SLICE-005`
 - 当前分支：`main`
-- 当前 commit：`e88d5a86eddf2dfb3b41d1442c853b9af4ef60ef`
+- 当前 commit：`PENDING_COMMIT`
 - 当前相关文档：
   - `README.md`
-  - `PLANNING.md`
   - `OUTLINE.md`
   - `TRACKERS/TEST-MATRIX.md`
   - `ACCEPTANCE.md`
+- 当前约束：
+  - 默认 Windows fat 包仍以 `tools/environment-assets/windows/playwright-browsers/` 作为全量浏览器缓存来源。
+  - Chromium-only 评估路径必须使用独立输出目录，不能覆盖默认全量缓存。
+  - `TEST-005` 纯净 Windows 首启验证仍是最终对外发版门槛之一。
 - 最近已验证事项：
-  - 人工核对 `docs/novice-release-checklist.md`，确认执行主线为“先 Windows fat，后 macOS”
-  - PowerShell 解析器确认 `build/build-windows.ps1` 存在可识别的参数块，且无解析错误
-  - 人工核对 `README.md`、`launchers/windows/*`、`launchers/unix/*` 的用户入口文案已切换到“先启动，后在页面内配置”
-  - Git Bash 语法检查通过：`launchers/unix/start.sh`、`launchers/unix/setup-key.sh`、`launchers/unix/update.sh`
-  - 官方 Node.js 与 MinGit 资产已下载到 `tools/environment-assets/windows/downloads/`
-  - 人工确认官方 MinGit 压缩包包含 `cmd\git.exe`，Windows 启动器已同步兼容 `git\cmd`
-  - 人工核对 `dist/openclaw-win-x64-fat/` 已包含 `browsers/`、`data/`、`git/`、`node/`、`openclaw/`、`scripts/` 与启动器文件
-  - 人工核对 README / state / test-matrix / acceptance 后，已统一为“Windows fat 已完成真实构建 smoke，纯净 Windows 首启验证仍待回补”
+  - PowerShell 解析器确认 `build/build-windows.ps1` 新增 `-PlaywrightBrowsersPath` 参数后仍可正常解析。
+  - PowerShell 解析器确认 `prefetch-playwright-browsers.ps1` 新增 `-OutputDir` 与 staging/temporary CLI 流程后仍可正常解析。
+  - 短窗口 Chromium-only smoke 证实：脚本先安装临时 Playwright CLI `1.58.2`，然后进入真实浏览器下载阶段，而不是先安装整套 OpenClaw 依赖。
+  - 失败日志证实当前卡点已前移为 Playwright 浏览器 CDN 下载网络问题，而非本地脚本结构问题。
+  - 人工核对 `README.md` 与 `tools/environment-assets/windows/README.md`，确认 full-set / Chromium-only 两条操作路径已经分离并有明确命令示例。
+- 当前验证方式：
+  - 对当前切片做最小可行验证：PowerShell parser check + Chromium-only focused smoke + 失败日志核对
 - 当前验证债：
   - `TEST-005`: `not_run`
     - 原因：尚未在纯净 Windows 机器上执行首启验证。
-    - 是否阻塞：`no`
+    - 是否阻塞：`yes`
+  - `TEST-010`: `failed`
+    - 原因：Chromium-only 预取 smoke 已进入真实浏览器下载阶段，但当前环境访问 Playwright CDN 时出现 `ECONNRESET` / 30s timeout。
+    - 是否阻塞：`yes`
 - 当前阻塞项：
   - 缺少纯净 Windows 首启验证环境，无法回补 `TEST-005`。
+  - 当前环境访问 Playwright 浏览器下载 CDN 不稳定，导致 Chromium-only 缓存 smoke 无法完成并产出最终目录。
 - 下一步最小动作：
-  - 在纯净 Windows 机器上执行 `TEST-005`，验证“无 API Key 预配置也能首启进入产品页”，并把证据回写到 `ACCEPTANCE.md`、`TRACKERS/TEST-MATRIX.md` 与新 checkpoint。
+  - 在 Playwright 浏览器下载网络恢复后，执行 Chromium-only 预取并生成对比缓存，然后用该缓存跑一次 Windows fat 对比构建；并行等待纯净 Windows 首启验证环境回补 `TEST-005`。
+- next_slice_id：`SLICE-006`
+- target_files：
+  - `tools/environment-assets/windows/prefetch-playwright-browsers.ps1`
+  - `build/build-windows.ps1`
+  - `tools/environment-assets/windows/README.md`
+  - `README.md`
+  - `docs/novice-release-delivery/TRACKERS/TEST-MATRIX.md`
+  - `docs/novice-release-delivery/ACCEPTANCE.md`
+- first_command：`powershell -ExecutionPolicy Bypass -File .\tools\environment-assets\windows\prefetch-playwright-browsers.ps1 -OpenClawPath .\openclaw-portable\openclaw -BrowserSet chromium -OutputDir playwright-browsers-chromium`
+- expected_artifact：`tools/environment-assets/windows/playwright-browsers-chromium/` populated with Chromium-only browser assets, followed by a Windows fat comparison build launched with `-PlaywrightBrowsersPath`
+- 下一刀已启动：`yes`
+- 下一刀启动证据：`2026-04-05 executed the Chromium-only prefetch command above; temporary Playwright CLI 1.58.2 installed in seconds and the run progressed into browser download before failing with CDN ECONNRESET / timeout`
+- 当前批准范围完成情况：`partial`
+- 下一步是否可立即执行：`no`
+- 是否仍在当前批准范围内：`yes`
+- 默认继续执行：`yes`
+- stop_candidate：`true`
+- 合法停点原因：`missing_external_info`
+- 停点申请证据：`2026-04-05 Chromium-only prefetch smoke failed because Playwright browser CDN downloads repeatedly reset/timed out; TEST-005 still lacks a clean Windows validation machine`
+- 停点若通过后的受影响下一步：`Rerun the Chromium-only prefetch/build comparison when Playwright CDN access is available, then execute TEST-005 on a clean Windows machine`
+- 停点新鲜度校验：`state=pending checkpoint=pending evidence=yes commit=pending`

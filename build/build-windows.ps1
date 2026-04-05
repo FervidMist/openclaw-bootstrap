@@ -1,7 +1,8 @@
 param(
     [ValidateSet("fat", "slim")]
     [string]$Mode = "fat",
-    [string]$OpenClawPath = ""
+    [string]$OpenClawPath = "",
+    [string]$PlaywrightBrowsersPath = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -117,6 +118,23 @@ function Assert-LastExitCode {
     }
 }
 
+function Resolve-OptionalDirectoryPath {
+    param(
+        [string]$PreferredPath,
+        [string]$RepoRoot
+    )
+
+    if ([string]::IsNullOrWhiteSpace($PreferredPath)) {
+        return ""
+    }
+
+    if ([System.IO.Path]::IsPathRooted($PreferredPath)) {
+        return $PreferredPath
+    }
+
+    return (Join-Path $RepoRoot $PreferredPath)
+}
+
 function Copy-SourceTree {
     param(
         [Parameter(Mandatory = $true)]
@@ -166,7 +184,9 @@ $launchersDir = Join-Path $RepoRoot "launchers\windows"
 $portableDir = Join-Path $RepoRoot "portable"
 $environmentAssetRoot = Join-Path $RepoRoot "tools\environment-assets\windows"
 $environmentDownloadsDir = Join-Path $environmentAssetRoot "downloads"
-$environmentBrowsersDir = Join-Path $environmentAssetRoot "playwright-browsers"
+$defaultEnvironmentBrowsersDir = Join-Path $environmentAssetRoot "playwright-browsers"
+$customEnvironmentBrowsersDir = Resolve-OptionalDirectoryPath -PreferredPath $PlaywrightBrowsersPath -RepoRoot $RepoRoot
+$environmentBrowsersDir = if ([string]::IsNullOrWhiteSpace($customEnvironmentBrowsersDir)) { $defaultEnvironmentBrowsersDir } else { $customEnvironmentBrowsersDir }
 $portableScriptsDir = Join-Path $portableDir "scripts"
 $portableDataDir = Join-Path $portableDir "data"
 $portableBrowsersDir = Join-Path $portableDir "browsers"
@@ -230,8 +250,14 @@ if (Test-DirectoryHasContent -Path $portableBrowsersDir) {
     Write-Host "Copying prebuilt Playwright browsers..."
     Copy-Item -Path $portableBrowsersDir -Destination (Join-Path $DistDir "browsers") -Recurse -Force
 } elseif (Test-DirectoryHasContent -Path $environmentBrowsersDir) {
-    Write-Host "Copying reusable environment Playwright browsers..."
+    if ([string]::IsNullOrWhiteSpace($customEnvironmentBrowsersDir)) {
+        Write-Host "Copying reusable environment Playwright browsers..."
+    } else {
+        Write-Host "Copying Playwright browsers from custom cache: $environmentBrowsersDir"
+    }
     Copy-Item -Path $environmentBrowsersDir -Destination (Join-Path $DistDir "browsers") -Recurse -Force
+} elseif (-not [string]::IsNullOrWhiteSpace($customEnvironmentBrowsersDir)) {
+    Write-Warning "Requested Playwright browser cache path has no content: $environmentBrowsersDir"
 }
 if ($null -ne $minGitArchive) {
     $gitTarget = Join-Path $DistDir "git"

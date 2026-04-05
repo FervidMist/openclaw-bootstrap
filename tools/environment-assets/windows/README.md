@@ -49,14 +49,15 @@ powershell -ExecutionPolicy Bypass -File .\tools\environment-assets\windows\pref
 这个脚本会：
 
 - 临时解压本地缓存的官方 Node.js
-- 在真实 `openclaw/` 项目中安装与应用匹配的依赖
-- 使用项目自身的 Playwright 版本预取浏览器
-- 把浏览器缓存放进 `playwright-browsers/`
+- 优先按真实应用 `package.json` 中锁定的 Playwright 版本临时安装一个匹配的 CLI，避免每次都为预取浏览器安装整套 OpenClaw 依赖
+- 使用与项目版本匹配的 Playwright CLI 预取浏览器
+- 先写入临时 staging 目录，成功后再替换目标浏览器缓存目录，避免把旧缓存和新子集混在一起
 
 ## 与构建脚本的关系
 
 - `build/build-windows.ps1` 会优先复用这里缓存的 Node.js zip
 - 若 `playwright-browsers/` 目录后续被填充，构建脚本也会优先复用这里的浏览器资产
+- 若需要比较不同浏览器子集，可以先用 `-OutputDir` 生成独立缓存，再通过 `build/build-windows.ps1 -PlaywrightBrowsersPath ...` 指向对应目录
 
 ## 不提交的内容
 
@@ -75,8 +76,14 @@ powershell -ExecutionPolicy Bypass -File .\tools\environment-assets\windows\pref
 powershell -ExecutionPolicy Bypass -File .\tools\environment-assets\windows\prefetch-playwright-browsers.ps1
 ```
 
-- Use the command below to point at a specific source checkout and prefetch only Chromium-related assets:
+- Use the command below to point at a specific source checkout and prefetch only Chromium-related assets into a separate comparison cache without overwriting the default full set:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\tools\environment-assets\windows\prefetch-playwright-browsers.ps1 -OpenClawPath .\openclaw-portable\openclaw -BrowserSet chromium
+powershell -ExecutionPolicy Bypass -File .\tools\environment-assets\windows\prefetch-playwright-browsers.ps1 -OpenClawPath .\openclaw-portable\openclaw -BrowserSet chromium -OutputDir playwright-browsers-chromium
+```
+
+- Use the command below to build a Windows fat package against that Chromium-only cache:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\build\build-windows.ps1 -Mode fat -PlaywrightBrowsersPath .\tools\environment-assets\windows\playwright-browsers-chromium
 ```

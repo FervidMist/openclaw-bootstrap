@@ -53,11 +53,24 @@
   - 已确认当前主要未完成项已收敛为 `TEST-005` 纯净 Windows 首启验证，而不是 fat 包构建本身
   - `README.md` 已补充当前仓库实际支持的源码布局，并明确当前阶段仍属内部验收中
 
+- 日期：2026-04-05
+- 切片编号：`SLICE-005`
+- 已执行验证：
+  - PowerShell 解析器检查 `tools/environment-assets/windows/prefetch-playwright-browsers.ps1`
+  - PowerShell 解析器检查 `build/build-windows.ps1`
+  - 实际执行 `powershell -ExecutionPolicy Bypass -File .\tools\environment-assets\windows\prefetch-playwright-browsers.ps1 -OpenClawPath .\openclaw-portable\openclaw -BrowserSet chromium -OutputDir playwright-browsers-chromium`
+  - 人工核对临时 smoke 日志与 `README.md`、`tools/environment-assets/windows/README.md`
+- 结果结论：
+  - Chromium-only 预取路径现已支持独立输出目录与 staging 写入，避免覆盖默认 `playwright-browsers/` 全量缓存
+  - Chromium-only 预取路径现可通过临时 Playwright CLI `1.58.2` 进入真实浏览器下载阶段，而不需要为此先安装整套 OpenClaw 依赖
+  - 当前失败已收敛为外部网络问题：Playwright CDN 下载 Chrome for Testing 时出现 `ECONNRESET` 与 30s timeout，因此本回合未产出最终 `playwright-browsers-chromium/` 目录
+
 ## 部分完成 / 跳过说明
 
 - 原因：
   - 当前仓库没有稳定保留顶层 `openclaw/` 目录，真实构建 smoke 依赖的是 `openclaw-portable/openclaw` 布局
   - 产品页内 onboarding 仍依赖 OpenClaw 本体支持，无法在本仓库单独完结
+  - 当前环境访问 Playwright 浏览器下载 CDN 不稳定，导致 Chromium-only 缓存对比 smoke 无法完成
 - 处理结论：
   - 先推进本仓库可控的构建、文档与入口契约，保留兼容兜底脚本
 
@@ -67,5 +80,6 @@
   - 真正的“页面内配置 API”仍依赖 OpenClaw 本体支持
   - 纯净 Windows 首启验证 (`TEST-005`) 尚未完成，当前还不能对外宣称“完全开箱即用已验收”
   - 若后续切换 OpenClaw 版本，仍需重新确认预取的 Playwright 浏览器资产与源码版本匹配
+  - Chromium-only 浏览器缓存对比路径已具备独立工具链，但其真实下载验证当前受 Playwright CDN 网络稳定性影响
 - 待确认事项：
   - macOS 正式发行物最终采用 `.app`、`.dmg` 还是其他 Finder 可双击形态
